@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,11 +48,23 @@ def get_power_flow(token):
 
     response.raise_for_status()
     data = response.json()
-    return data['data']['pv'] if data else ""
+    return data['data']['pv'] if data['msg'] == 'success' and data['data'] is not None else False
+
+
+def main():
+    session_token = get_session_token()
+    while True:
+        pv = get_power_flow(session_token)
+        if not pv:
+            # Retry with new token
+            session_token = get_session_token()
+            pv = get_power_flow(session_token)
+        print(pv or "zZz")
+        time.sleep(5)
 
 
 if __name__ == '__main__':
-    session_token = get_session_token()
-    pv = get_power_flow(session_token)
-    print(pv or "zZz")
-
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
