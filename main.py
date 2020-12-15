@@ -48,7 +48,14 @@ def get_power_flow(token):
 
     response.raise_for_status()
     data = response.json()
-    return data['data']['pv'] if data['msg'] == 'success' and data['data'] is not None else False
+    if data['msg'] == 'success' and data['data'] is not None:
+        if data['data']['pv'].endswith('(W)'):
+            pv = data['data']['pv'][:-3]
+        else:
+            pv = data['data']['pv']
+        return pv
+    else:
+        return False
 
 
 def main():
