@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 try:
     import smbus
     from microdotphat import write_string, clear, show
-
     i2c_present = True
 except ImportError as e:
     i2c_present = False
