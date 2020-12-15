@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 try:
     import smbus
     from microdotphat import write_string, clear, show
+
     i2c_present = True
 except ImportError as e:
     i2c_present = False
@@ -38,6 +39,8 @@ def get_session_token():
         return True, token
     except requests.exceptions.HTTPError as token_exception:
         return False, str(token_exception.response.status_code)
+    except requests.exceptions.ConnectionError:
+        return False, "000"
 
 
 def get_power_flow(token):
@@ -64,6 +67,8 @@ def get_power_flow(token):
         return True, pv
     except requests.exceptions.HTTPError as data_exception:
         return False, str(data_exception.response.status_code)
+    except requests.exceptions.ConnectionError:
+        return False, "000"
 
 
 def write_to_display(message):
