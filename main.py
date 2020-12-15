@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 try:
     import smbus
     from microdotphat import write_string, clear, show
+
     i2c_present = True
 except ImportError as e:
     i2c_present = False
@@ -26,17 +27,18 @@ def get_session_token():
         'Token': '{"version": "v2.0.4", "client": "ios", "language": "en"}'
     }
 
-    login_response = requests.post(base_api_url + 'v2/Common/CrossLogin',
-                                   headers=login_headers,
-                                   data=login_payload,
-                                   timeout=10,
-                                   )
-
-    login_response.raise_for_status()
-    login_data = login_response.json()
-    token = json.dumps(login_data['data'])
-
-    return token
+    try:
+        login_response = requests.post(base_api_url + 'v2/Common/CrossLogin',
+                                       headers=login_headers,
+                                       data=login_payload,
+                                       timeout=10,
+                                       )
+        login_response.raise_for_status()
+        login_data = login_response.json()
+        token = json.dumps(login_data['data'])
+        return True, token
+    except requests.exceptions.HTTPError as token_exception:
+        return False, str(token_exception.response.status_code)
 
 
 def get_power_flow(token):
@@ -47,42 +49,50 @@ def get_power_flow(token):
     payload = {
         'powerStationId': os.getenv('GOODWE_SYSTEMID')
     }
+    try:
+        response = requests.post(base_api_url + 'v2/PowerStation/GetPowerflow',
+                                 headers=headers,
+                                 data=payload,
+                                 timeout=10,
+                                 )
 
-    response = requests.post(base_api_url + 'v2/PowerStation/GetPowerflow',
-                             headers=headers,
-                             data=payload,
-                             timeout=10,
-                             )
-
-    response.raise_for_status()
-    data = response.json()
-    if data['msg'] == 'success' and data['data'] is not None:
+        response.raise_for_status()
+        data = response.json()
         if data['data']['pv'].endswith('(W)'):
             pv = data['data']['pv'][:-3]
         else:
             pv = data['data']['pv']
-        return pv
-    else:
-        return False
+        return True, pv
+    except requests.exceptions.HTTPError as data_exception:
+        return False, str(data_exception.response.status_code)
+
+
+def write_to_display(message):
+    if i2c_present:
+        clear()
+        write_string(message, kerning=False)
+        show()
+    print(message)
 
 
 def main():
-    session_token = get_session_token()
+    pv_success = False
     while True:
-        pv = get_power_flow(session_token)
-        if not pv:
-            # Retry with new token
-            session_token = get_session_token()
-            pv = get_power_flow(session_token)
+        if not pv_success:
+            # Get new token
+            token_success, token_value = get_session_token()
 
-        message = pv or "zZz"
+        if token_success:
+            pv_success, pv_value = get_power_flow(token_value)
+            if pv_success:
+                message = pv_value or "zZz"
+            else:
+                message = "DE:" + pv_value
+        else:
+            message = "TE:" + token_value
 
-        if i2c_present:
-            clear()
-            write_string(pv, kerning=False)
-            show()
+        write_to_display(message)
 
-        print(message)
         time.sleep(5)
 
 
