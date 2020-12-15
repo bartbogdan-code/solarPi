@@ -71,7 +71,8 @@ def write_to_display(message):
         clear()
         write_string(message, kerning=False)
         show()
-    print(message)
+    else:
+        print(message)
 
 
 def main():
