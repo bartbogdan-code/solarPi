@@ -4,6 +4,14 @@ import requests
 import time
 from dotenv import load_dotenv
 
+try:
+    import smbus
+    from microdotphat import write_string, clear, show
+    i2c_present = True
+except ImportError as e:
+    i2c_present = False
+    pass
+
 load_dotenv()
 base_api_url = 'https://semsportal.com/api/'
 
@@ -66,7 +74,15 @@ def main():
             # Retry with new token
             session_token = get_session_token()
             pv = get_power_flow(session_token)
-        print(pv or "zZz")
+
+        message = pv or "zZz"
+
+        if i2c_present:
+            clear()
+            write_string(pv, kerning=False)
+            show()
+
+        print(message)
         time.sleep(5)
 
 
