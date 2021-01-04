@@ -74,7 +74,7 @@ def get_power_flow(token):
 def write_to_display(message):
     if i2c_present:
         clear()
-        write_string(message, kerning=False)
+        write_string(message.rjust(6), kerning=False)
         show()
     else:
         print(message)
