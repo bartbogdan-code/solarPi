@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 try:
     import smbus
-    from microdotphat import write_string, clear, show
+    from microdotphat import write_string, clear, show, set_brightness
 
     i2c_present = True
 except ImportError as e:
@@ -83,17 +83,26 @@ def write_to_display(message):
         print(message)
 
 
+def set_display_brightness(brightness):
+    if i2c_present:
+        set_brightness(brightness)
+
+
 def main():
     pv_success = False
     while True:
+        set_display_brightness(1)
         if not pv_success:
             # Get new token
             token_success, token_value = get_session_token()
 
         if token_success:
             pv_success, pv_value = get_power_flow(token_value)
-            if pv_success:
-                message = pv_value or "zZz"
+            if pv_success and pv_value:
+                message = pv_value
+            elif pv_success:
+                set_display_brightness(0.5)
+                message = "zZz"
             else:
                 message = "DE:" + pv_value
         else:
