@@ -60,11 +60,14 @@ def get_power_flow(token):
 
         response.raise_for_status()
         data = response.json()
-        if data['data']['pv'].endswith('(W)'):
-            pv = data['data']['pv'][:-3]
+        if data:
+            if data['data']['pv'].endswith('(W)'):
+                pv = data['data']['pv'][:-3]
+            else:
+                pv = data['data']['pv']
+            return True, pv
         else:
-            pv = data['data']['pv']
-        return True, pv
+            return True, None
     except requests.exceptions.HTTPError as data_exception:
         return False, str(data_exception.response.status_code)
     except requests.exceptions.ConnectionError:
