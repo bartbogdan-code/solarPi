@@ -74,24 +74,20 @@ def get_power_flow(token):
         return False, "000"
 
 
-def write_to_display(message):
+def write_to_display(message, brightness=1):
     if i2c_present:
         clear()
+        set_brightness(brightness)
         write_string(message.rjust(6), kerning=False)
         show()
     else:
         print(message)
 
 
-def set_display_brightness(brightness):
-    if i2c_present:
-        set_brightness(brightness)
-
-
 def main():
     pv_success = False
     while True:
-        set_display_brightness(1)
+        brightness = 1
         if not pv_success:
             # Get new token
             token_success, token_value = get_session_token()
@@ -101,14 +97,14 @@ def main():
             if pv_success and pv_value:
                 message = pv_value
             elif pv_success:
-                set_display_brightness(0.5)
                 message = "zZz"
+                brightness = 0.3
             else:
                 message = "DE:" + pv_value
         else:
             message = "TE:" + token_value
 
-        write_to_display(message)
+        write_to_display(message, brightness)
 
         time.sleep(5)
 
